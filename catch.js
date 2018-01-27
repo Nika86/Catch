@@ -10,6 +10,11 @@ const H = 50;
 const T = 30;
 const firstPauseTime = 1000;
 
+const thingColours = ['#000000','#cccccc','#99ff99'];
+const thingColourOpacities = ['0.0','1.0','1.0'];
+// colours: empty, net, ball
+
+
 var board = new Array(W*H);
 var moveCount = 0;
 
@@ -172,18 +177,6 @@ function keyHandler(event) {
 
       break;
     case 39: /* right */
-
-      break;
-    case 87: /* W */
-
-      break;
-    case 83: /* S */
-
-      break;
-    case 65: /* A */
-
-      break;
-    case 68: /* D */
 
       break;
     case 80: /* P */
