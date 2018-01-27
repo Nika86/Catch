@@ -1,0 +1,37 @@
+<html>
+<head>
+	<title>Catch</title>
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<meta charset="utf-8" />
+</head>
+<body onload="init()">
+	<script type="text/javascript" src="catch.js"></script>
+
+	<div id="boardWrapper">
+		<script type="text/javascript">
+			document.getElementById('boardWrapper').style['width'] = Math.min(window.innerWidth,window.innerHeight*800/500);
+			document.getElementById('boardWrapper').style['height'] = Math.min(window.innerWidth*500/800,window.innerHeight);
+		</script>
+
+		<div id="gameinfo" class="infotext">
+			<span id="score">score</span>
+			<span id="gamespeed">Game speed: 0</span>
+		</div>
+
+		<div id="background">
+			<img src="Assets/background_images/background.png" width="100%" height="100%"/>
+		</div>
+
+		<div id="gameBoard"></div>
+
+		<div id="menuWrapper">
+			<div id="menu">
+				<div id="resume_button" class="menu_button">
+					<span class="menu_text">Resume Game</span>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>
