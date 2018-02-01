@@ -1,5 +1,5 @@
 const empty = 0;
-
+const ground = 1;
 const up = 2;
 const right = 3;
 const down = 4;
@@ -14,16 +14,19 @@ const H = 50;
 const T = 100;
 const firstPauseTime = 1000;
 
-const thingColours = ['#000000','#cccccc','#99ff99'];
-const thingColourOpacities = ['0.0','1.0','1.0'];
-// colours: empty, net, ball
+const thingColours = ['#000000', '#ff9999', '#cccccc', '#cccc66'];
+const thingColourOpacities = ['0.0', '1.0', '1.0', '1.0'];
+
+const dropColour = 3;
+const netColour = 2;
+// colours: empty, ground, net, ball
 
 
 var board = new Array(W*H);
 
-var moveCount = 0;
-var gameScore = 0;
-var drops = new Array();
+var moveCount;
+var gameScore;
+var drops;
 
 function createEmptyRect(x, y) {
   board[W*y + x] = empty;
@@ -133,7 +136,6 @@ function thing(x, y, dir, length, colour) {
   this.ey = y;
   this.g = 0; // how much more the thing needs to grow
   this.c = colour; // thing colour
-  this.moved = true;
   this.sx = x + (length - 1)*xShift(dir)
   this.sy = y + (length - 1)*yShift(dir)
   for (var i = 0; i < length; i++)
@@ -151,10 +153,13 @@ thing.prototype.tailMove = function() {
   } else {
     var dir = board[W*this.ey + this.ex];
     board[W*this.ey + this.ex] = empty;
-    setRectColour(this.ex, this.ey, 0);
+    setRectColour(this.ex, this.ey, empty);
+    if (this.sx == this.ex && this.sy == this.ey)
+    	return 0;
     this.ex = ((this.ex + xShift(dir)) + W) % W;
-    this.ey = ((this.ey + yShift(dir)) + H) % H;
+    this.ey = ((this.ey + yShift(dir)) + H) % H;    	
   }
+  return 1;
 }
 
 thing.prototype.frontMove = function() {
@@ -167,8 +172,14 @@ thing.prototype.frontMove = function() {
       setRectColour(x, y, this.c);
       this.sx = x;
       this.sy = y;
-      this.moved = true;
       return 1;
+    case ground: // drop hits the ground
+    	gameScore -= 1;
+    	return 1;
+    case left:
+    case right: // drop hits a net
+    	gameScore += 1;
+    	return 1;
     default:
       return 0;
   }
@@ -181,12 +192,12 @@ function keyHandler(event) {
     event.preventDefault();
   switch (event.keyCode) {
     case 37: /* left */
-    	net.frontMove();
     	net.tailMove();
+    	net.frontMove();
       break;
     case 39: /* right */
-    	net.frontMove();
     	net.tailMove();
+    	net.frontMove();
       break;
     case 80: /* P */
     case 77: /* M */
@@ -206,22 +217,31 @@ function keyHandler(event) {
 }
 
 function tick() {
+	// update net positions
+	// TODO: implement moving while key is pressed (before release)
+
 	// update drop positions
 	if (moveCount % ticksPerUnitDrop == 0) {
+		if (drops.length >= 1) {
+			if (drops[0].tailMove() == 1) {
+				drops[0].frontMove();			
+			} else {
+				drops.splice(0,1);
+			}
+		}
 		for (var dropNum in drops) {
-			drops[dropNum].frontMove();
 			drops[dropNum].tailMove();
+			drops[dropNum].frontMove();
 		}
 	}
 
 	// spawn new drops
 	if (moveCount % ticksPerNewDrop == 0) {
-		drops.push(new thing(1 + Math.floor(Math.random()*(W-2)), 2, down, 2, 2));
-		
+		drops.push(new thing(1 + Math.floor(Math.random()*(W-2)), 2, down, 2, dropColour));
 	}
 
-	updateScore(gameScore);
 	moveCount += 1;
+	updateScore(gameScore);
 	gameState.scheduleTick();
 }
 
@@ -233,11 +253,20 @@ function newGame() {
       setRectColour(x, y, 0);
     }
 
-  net = new thing(W/2 - initialLength/2, H - 2, right, initialLength, 1)
+  // add the ground and the net to the game
+	for (var l = 0; l < W; l++) {
+	  board[W*(H - 1) + l] = ground;
+	  setRectColour(l, H - 1, ground);
+	}
+  net = new thing(W/2 - initialLength/2, H - 3, right, initialLength, netColour)
+  
+  // initialize variables
   moveCount = 0;
+	gameScore = 0;
+  updateScore(gameScore);
+	drops = new Array();
 
   gameState.moveMethod = tick;
-  updateScore(gameScore);
   setTimeout(gameState.resume(), firstPauseTime);
 }
 
