@@ -86,6 +86,10 @@ function yShift(dir) {
   }
 }
 
+function revDir(dir) {
+	return dir % 4 + 2;
+}
+
 function GameState() {
   const maxSpeed = 10;
   const minSpeed = -10;
@@ -157,7 +161,22 @@ thing.prototype.tailMove = function() {
     if (this.sx == this.ex && this.sy == this.ey)
     	return 0;
     this.ex = ((this.ex + xShift(dir)) + W) % W;
-    this.ey = ((this.ey + yShift(dir)) + H) % H;    	
+    this.ey = ((this.ey + yShift(dir)) + H) % H;
+  }
+  return 1;
+}
+
+thing.prototype.revTailMove = function() {
+  if (this.g > 0) {
+    this.g--;
+  } else {
+    var dir = board[W*this.sy + this.sx];
+    board[W*this.sy + this.sx] = empty;
+    setRectColour(this.sx, this.sy, empty);
+    if (this.sx == this.ex && this.sy == this.ey)
+    	return 0;
+    this.sx = ((this.sx + xShift(revDir(dir))) + W) % W;
+    this.sy = ((this.sy + yShift(revDir(dir))) + H) % H;
   }
   return 1;
 }
@@ -175,10 +194,37 @@ thing.prototype.frontMove = function() {
       return 1;
     case ground: // drop hits the ground
     	gameScore -= 1;
+    	net.g -= 1;
     	return 1;
     case left:
     case right: // drop hits a net
     	gameScore += 1;
+    	net.g += 1;
+    	return 1;
+    default:
+      return 0;
+  }
+}
+
+thing.prototype.revFrontMove = function() {
+	var x = ((this.ex + xShift(revDir(board[W*this.ey + this.ex]))) + W) % W;
+  var y = ((this.ey + yShift(revDir(board[W*this.ey + this.ex]))) + H) % H;
+  var targetType = board[W*y + x];
+  switch(targetType) {
+    case empty:
+      board[W*y + x] = board[W*this.ey + this.ex];
+      setRectColour(x, y, this.c);
+      this.ex = x;
+      this.ey = y;
+      return 1;
+    case ground: // drop hits the ground
+    	gameScore -= 1;
+    	net.g -= 1;
+    	return 1;
+    case left:
+    case right: // drop hits a net
+    	gameScore += 1;
+    	net.g += 1;
     	return 1;
     default:
       return 0;
@@ -187,17 +233,17 @@ thing.prototype.frontMove = function() {
 
 const keyCodeArray = [37,39,80,77,27,32,173,189,61,187];
 
-function keyHandler(event) {
+function downKeyHandler(event) {
   if (event.keyCode in keyCodeArray)
     event.preventDefault();
   switch (event.keyCode) {
     case 37: /* left */
-    	net.tailMove();
-    	net.frontMove();
+    	net.moving = true;
+    	net.dir = left;
       break;
     case 39: /* right */
-    	net.tailMove();
-    	net.frontMove();
+    	net.moving = true;
+    	net.dir = right;
       break;
     case 80: /* P */
     case 77: /* M */
@@ -216,17 +262,39 @@ function keyHandler(event) {
   }
 }
 
+function upKeyHandler(event) {
+  if (event.keyCode in keyCodeArray)
+    event.preventDefault();
+  switch (event.keyCode) {
+    case 37: /* left */
+    	net.moving = false;
+      break;
+    case 39: /* right */
+    	net.moving = false;
+      break;
+  }
+}
+
 function tick() {
 	// update net positions
+	if (net.moving) {
+		if (net.dir == right) {
+			net.frontMove();
+			net.tailMove();
+		} else {
+			net.revFrontMove();
+			net.revTailMove();
+		}
+	}
 	// TODO: implement moving while key is pressed (before release)
 
 	// update drop positions
 	if (moveCount % ticksPerUnitDrop == 0) {
 		if (drops.length >= 1) {
 			if (drops[0].tailMove() == 1) {
-				drops[0].frontMove();			
+				drops[0].frontMove();
 			} else {
-				drops.splice(0,1);
+				drops.shift();
 			}
 		}
 		for (var dropNum in drops) {
@@ -258,8 +326,9 @@ function newGame() {
 	  board[W*(H - 1) + l] = ground;
 	  setRectColour(l, H - 1, ground);
 	}
-  net = new thing(W/2 - initialLength/2, H - 3, right, initialLength, netColour)
-  
+  net = new thing(W/2 - initialLength/2, H - 3, right, initialLength, netColour);
+  net.moving = false;
+
   // initialize variables
   moveCount = 0;
 	gameScore = 0;
@@ -282,7 +351,8 @@ function init()
     gameState.resume();
   }
 
-  document.documentElement.addEventListener('keydown',keyHandler,false);
+  document.documentElement.addEventListener('keydown',downKeyHandler,false);
+  document.documentElement.addEventListener('keyup',upKeyHandler,false);
 
   newGame();
 }
