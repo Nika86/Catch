@@ -5,9 +5,13 @@ const right = 3;
 const down = 4;
 const left = 5;
 
+const ticksPerUnitDrop = 2;
+const ticksPerNewDrop = 12;
+const initialLength = 12;
+
 const W = 80;
 const H = 50;
-const T = 30;
+const T = 100;
 const firstPauseTime = 1000;
 
 const thingColours = ['#000000','#cccccc','#99ff99'];
@@ -16,7 +20,10 @@ const thingColourOpacities = ['0.0','1.0','1.0'];
 
 
 var board = new Array(W*H);
+
 var moveCount = 0;
+var gameScore = 0;
+var drops = new Array();
 
 function createEmptyRect(x, y) {
   board[W*y + x] = empty;
@@ -40,6 +47,12 @@ function createEmptyRect(x, y) {
 function setRectColour(x, y, colourIndex) {
   document.getElementById('gameBoard').childNodes[W*y + x].style['backgroundColor'] = thingColours[colourIndex];
   document.getElementById('gameBoard').childNodes[W*y + x].style['opacity'] = thingColourOpacities[colourIndex];
+}
+
+function updateScore(score) {
+  var oldNode = document.getElementById('score').childNodes[0];
+  var textNode = document.createTextNode('Score: ' + score);
+  document.getElementById('score').replaceChild(textNode,oldNode);
 }
 
 function updateSpeedDisplay(newSpeed) {
@@ -71,15 +84,15 @@ function yShift(dir) {
 }
 
 function GameState() {
-  const maxSpeed = 5;
-  const minSpeed = -5;
+  const maxSpeed = 10;
+  const minSpeed = -10;
   this.speed = 0;
   this.speedFactor = 1.0;
   this.paused = true;
   this.resume = function() {
     document.getElementById('menu').style.display = 'none';
     this.paused = false;
-    this.scheduleMove();
+    this.scheduleTick();
   }
   this.pause = function() {
     document.getElementById('menu').style.display = 'block';
@@ -94,21 +107,21 @@ function GameState() {
   }
   this.speedUp = function() {
     if (this.speed < maxSpeed) {
-      this.speed++;
+      this.speed += 2;
     }
     this.speedFactor = Math.pow(10.0, this.speed/10.0);
     updateSpeedDisplay(this.speed);
   }
   this.slowDown = function() {
     if (this.speed > minSpeed) {
-      this.speed--;
+      this.speed -= 2;
     }
     this.speedFactor = Math.pow(10.0, this.speed/10.0);
     updateSpeedDisplay(this.speed);
   }
-  this.scheduleMove = function() {
+  this.scheduleTick = function() {
     if (!this.paused) {
-      setTimeout('move();', T/this.speedFactor);
+      setTimeout('tick();', T/this.speedFactor);
     }
   }
 }
@@ -161,23 +174,19 @@ thing.prototype.frontMove = function() {
   }
 }
 
-const keyCodeArray = [38,40,37,39,87,83,65,68,80,77,27,32,173,189,61,187];
+const keyCodeArray = [37,39,80,77,27,32,173,189,61,187];
 
 function keyHandler(event) {
   if (event.keyCode in keyCodeArray)
     event.preventDefault();
   switch (event.keyCode) {
-    case 38: /* up */
-
-      break;
-    case 40: /* down */
-
-      break;
     case 37: /* left */
-
+    	net.frontMove();
+    	net.tailMove();
       break;
     case 39: /* right */
-
+    	net.frontMove();
+    	net.tailMove();
       break;
     case 80: /* P */
     case 77: /* M */
@@ -196,12 +205,27 @@ function keyHandler(event) {
   }
 }
 
-function move() {
+function tick() {
+	// update drop positions
+	if (moveCount % ticksPerUnitDrop == 0) {
+		for (var dropNum in drops) {
+			drops[dropNum].frontMove();
+			drops[dropNum].tailMove();
+		}
+	}
 
+	// spawn new drops
+	if (moveCount % ticksPerNewDrop == 0) {
+		drops.push(new thing(1 + Math.floor(Math.random()*(W-2)), 2, down, 2, 2));
+		
+	}
+
+	updateScore(gameScore);
+	moveCount += 1;
+	gameState.scheduleTick();
 }
 
-function newGame()
-{
+function newGame() {
   // clean up the board
   for (var y = 0; y < H; y++)
     for (var x = 0; x < W; x++) {
@@ -209,7 +233,11 @@ function newGame()
       setRectColour(x, y, 0);
     }
 
-  gameState.moveMethod = move;
+  net = new thing(W/2 - initialLength/2, H - 2, right, initialLength, 1)
+  moveCount = 0;
+
+  gameState.moveMethod = tick;
+  updateScore(gameScore);
   setTimeout(gameState.resume(), firstPauseTime);
 }
 
