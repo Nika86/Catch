@@ -5,13 +5,13 @@ const right = 3;
 const down = 4;
 const left = 5;
 
-const ticksPerUnitDrop = 2;
-const ticksPerNewDrop = 12;
+const ticksPerUnitDrop = 4;
+const ticksPerNewDrop = 30;
 const initialLength = 12;
 
 const W = 80;
 const H = 50;
-const T = 100;
+const T = 50;
 const firstPauseTime = 1000;
 
 const thingColours = ['#000000', '#ff9999', '#cccccc', '#cccc66'];
@@ -24,7 +24,6 @@ const netColour = 2;
 var board = new Array(W*H);
 
 var moveCount;
-var gameScore;
 var drops;
 
 function createEmptyRect(x, y) {
@@ -53,7 +52,7 @@ function setRectColour(x, y, colourIndex) {
 
 function updateScore(score) {
 	var oldNode = document.getElementById('score').childNodes[0];
-	var textNode = document.createTextNode('Score: ' + score);
+	var textNode = document.createTextNode('Unused length: ' + score);
 	document.getElementById('score').replaceChild(textNode,oldNode);
 }
 
@@ -191,12 +190,10 @@ thing.prototype.frontMove = function() {
 			this.sy = y;
 			return 1;
 		case ground: // drop hits the ground
-			gameScore -= 1;
 			net.g -= 1;
 			return 1;
 		case left:
 		case right: // drop hits a net
-			gameScore += 1;
 			net.g += 1;
 			return 1;
 		default:
@@ -216,12 +213,10 @@ thing.prototype.revFrontMove = function() {
 			this.ey = y;
 			return 1;
 		case ground: // drop hits the ground
-			gameScore -= 1;
 			net.g -= 1;
 			return 1;
 		case left:
 		case right: // drop hits a net
-			gameScore += 1;
 			net.g += 1;
 			return 1;
 		default:
@@ -306,7 +301,7 @@ function tick() {
 	}
 
 	moveCount += 1;
-	updateScore(gameScore);
+	updateScore(net.g);
 	gameState.scheduleTick();
 }
 
@@ -328,8 +323,7 @@ function newGame() {
 
 	// initialize variables
 	moveCount = 0;
-	gameScore = 0;
-	updateScore(gameScore);
+	updateScore(net.g);
 	drops = new Array();
 
 	gameState.moveMethod = tick;
