@@ -6,12 +6,12 @@ const down = 4;
 const left = 5;
 
 const ticksPerUnitDrop = 4;
-const ticksPerNewDrop = 30;
+const ticksPerNewDrop = 42;
 const initialLength = 12;
 
 const W = 80;
 const H = 50;
-const T = 50;
+const T = 42;
 const firstPauseTime = 1000;
 
 const thingColours = ['#000000', '#ff9999', '#cccccc', '#cccc66'];
@@ -282,16 +282,12 @@ function tick() {
 
 	// update drop positions
 	if (moveCount % ticksPerUnitDrop == 0) {
-		if (drops.length >= 1) {
-			if (drops[0].tailMove() == 1) {
-				drops[0].frontMove();
+		for (var dropNum in drops) {
+			if (drops[dropNum].tailMove() == 1) {
+				drops[dropNum].frontMove();
 			} else {
 				drops.shift();
 			}
-		}
-		for (var dropNum in drops) {
-			drops[dropNum].tailMove();
-			drops[dropNum].frontMove();
 		}
 	}
 
