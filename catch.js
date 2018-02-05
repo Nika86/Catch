@@ -19,7 +19,7 @@ const thingColourOpacities = ['0.0', '1.0', '1.0', '1.0'];
 
 const dropColour = 3;
 const netColour = 2;
-// colours: empty, ground, net, ball
+// colours: empty, ground, net, drop
 
 var board = new Array(W*H);
 
@@ -196,6 +196,10 @@ thing.prototype.frontMove = function() {
 		case right: // drop hits a net
 			net.g += 1;
 			return 1;
+		case down: // net hits a drop
+			drops[0].cleanup();
+			drops.shift();
+			return 1;
 		default:
 			return 0;
 	}
@@ -212,16 +216,17 @@ thing.prototype.revFrontMove = function() {
 			this.ex = x;
 			this.ey = y;
 			return 1;
-		case ground: // drop hits the ground
-			net.g -= 1;
-			return 1;
-		case left:
-		case right: // drop hits a net
-			net.g += 1;
+		case down: // net hits a drop
+			drops[0].cleanup();
+			drops.shift();
 			return 1;
 		default:
 			return 0;
 	}
+}
+
+thing.prototype.cleanup = function() {
+	while (this.tailMove() == 1);
 }
 
 const keyCodeArray = [37,39,80,77,27,32,173,189,61,187];
@@ -272,11 +277,11 @@ function tick() {
 	// update net positions
 	if (net.moving) {
 		if (net.dir == right) {
-			net.frontMove();
 			net.tailMove();
+			net.frontMove();
 		} else {
-			net.revFrontMove();
 			net.revTailMove();
+			net.revFrontMove();
 		}
 	}
 
