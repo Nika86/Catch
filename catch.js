@@ -151,34 +151,41 @@ function thing(x, y, dir, length, colour) {
 thing.prototype.tailMove = function() {
 	if (this.g > 0) {
 		this.g--;
-	} else {
-		var dir = board[W*this.ey + this.ex];
-		board[W*this.ey + this.ex] = empty;
-		setRectColour(this.ex, this.ey, empty);
-		if (this.sx == this.ex && this.sy == this.ey)
-			return 0;
-		this.ex = ((this.ex + xShift(dir)) + W) % W;
-		this.ey = ((this.ey + yShift(dir)) + H) % H;
+		return 1;
 	}
+
+	var dir = board[W*this.ey + this.ex];
+	board[W*this.ey + this.ex] = empty;
+	setRectColour(this.ex, this.ey, empty);
+	if (this.sx == this.ex && this.sy == this.ey)
+		return 0;
+	this.ex = ((this.ex + xShift(dir)) + W) % W;
+	this.ey = ((this.ey + yShift(dir)) + H) % H;
 	return 1;
 }
 
 thing.prototype.revTailMove = function() {
 	if (this.g > 0) {
 		this.g--;
-	} else {
-		var dir = board[W*this.sy + this.sx];
-		board[W*this.sy + this.sx] = empty;
-		setRectColour(this.sx, this.sy, empty);
-		if (this.sx == this.ex && this.sy == this.ey)
-			return 0;
-		this.sx = ((this.sx + xShift(revDir(dir))) + W) % W;
-		this.sy = ((this.sy + yShift(revDir(dir))) + H) % H;
+		return 1;
 	}
+
+	var dir = board[W*this.sy + this.sx];
+	board[W*this.sy + this.sx] = empty;
+	setRectColour(this.sx, this.sy, empty);
+	if (this.sx == this.ex && this.sy == this.ey)
+		return 0;
+	this.sx = ((this.sx + xShift(revDir(dir))) + W) % W;
+	this.sy = ((this.sy + yShift(revDir(dir))) + H) % H;
 	return 1;
 }
 
 thing.prototype.frontMove = function() {
+	if (this.g < 0) {
+		this.g++;
+		return 0;
+	}
+
 	var x = ((this.sx + xShift(board[W*this.sy + this.sx])) + W) % W;
 	var y = ((this.sy + yShift(board[W*this.sy + this.sx])) + H) % H;
 	var targetType = board[W*y + x];
@@ -206,6 +213,11 @@ thing.prototype.frontMove = function() {
 }
 
 thing.prototype.revFrontMove = function() {
+	if (this.g < 0) {
+		this.g++;
+		return 0;
+	}
+
 	var x = ((this.ex + xShift(revDir(board[W*this.ey + this.ex]))) + W) % W;
 	var y = ((this.ey + yShift(revDir(board[W*this.ey + this.ex]))) + H) % H;
 	var targetType = board[W*y + x];
